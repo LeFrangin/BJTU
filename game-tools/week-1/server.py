@@ -1,66 +1,84 @@
-# Tcp Chat server
- 
-import socket, select
- 
-#Function to broadcast chat messages to all connected clients
-def broadcast_data (sock, message):
-    #Do not send the message to master socket and the client who has send us the message
-    for socket in CONNECTION_LIST:
-        if socket != server_socket and socket != sock :
-            try :
-                socket.send(message)
-            except :
-                # broken socket connection may be, chat client pressed ctrl+c for example
-                socket.close()
-                CONNECTION_LIST.remove(socket)
- 
-if __name__ == "__main__":
-     
-    # List to keep track of socket descriptors
-    CONNECTION_LIST = []
-    RECV_BUFFER = 4096 # Advisable to keep it as an exponent of 2
-    PORT = 5000
-     
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # this has no effect, why ?
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(("0.0.0.0", PORT))
-    server_socket.listen(10)
- 
-    # Add server socket to the list of readable connections
-    CONNECTION_LIST.append(server_socket)
- 
-    print( "Chat server started on port " + str(PORT) )
- 
-    while 1:
-        # Get the list sockets which are ready to be read through select
-        read_sockets,write_sockets,error_sockets = select.select(CONNECTION_LIST,[],[])
- 
-        for sock in read_sockets:
-            #New connection
-            if sock == server_socket:
-                # Handle the case in which there is a new connection recieved through server_socket
-                sockfd, addr = server_socket.accept()
-                CONNECTION_LIST.append(sockfd)
-                print("Client (%s, %s) connected", addr)
-                 
-                broadcast_data(sockfd, "[%s:%s] entered room\n" % addr)
-             
-            #Some incoming message from a client
-            else:
-                # Data recieved from client, process it
-                try:
-                    #In Windows, sometimes when a TCP program closes abruptly,
-                    # a "Connection reset by peer" exception will be thrown
-                    data = sock.recv(RECV_BUFFER)
-                    if data:
-                        broadcast_data(sock, "\r" + '<' + str(sock.getpeername()) + '> ' + data)                
-                 
-                except:
-                    broadcast_data(sock, "Client (%s, %s) is offline" % addr)
-                    print("Client (%s, %s) is offline" % addr)
-                    sock.close()
-                    CONNECTION_LIST.remove(sock)
-                    continue
-     
-    server_socket.close()
+from socket import socket, SO_REUSEADDR, SOL_SOCKET
+from asyncio import Task, coroutine, get_event_loop
+import json
+
+BASIC_CHANNEL = 'All'
+
+class Peer(object):
+    def __init__(self, server, sock, name):
+        self.loop = server.loop
+        self.name = name
+        self.displayName = 'anonymous'
+        self.channel = BASIC_CHANNEL
+        self._sock = sock
+        self._server = server
+        Task(self._peer_handler())
+
+    def send(self, data):
+        return self.loop.sock_sendall(self._sock, data.encode('utf8'))
+    
+    @coroutine
+    def _peer_handler(self):
+        try:
+            yield from self._peer_loop()
+        except IOError:
+            pass
+        finally:
+            self._server.remove(self)
+
+    @coroutine
+    def _peer_loop(self):
+        while True:
+            buf = yield from self.loop.sock_recv(self._sock, 1024)
+            if buf == b'':
+                break
+            data = json.loads(buf.decode())
+            print('data received')
+            print(data)
+            if data['type'] == 1:
+                self._server.broadcast(json.dumps({ 'type': 1, 'data': data['data'], 'from': self.displayName, 'channel': self.channel }), self.channel, self)
+            if data['type'] == 2:
+                self._server.broadcast(json.dumps({ 'type': 2, 'data': data['data'], 'from': self.displayName, 'channel': self.channel }), self.channel, self)
+                self.displayName = data['data']
+            if data['type'] == 3:
+                self.channel = data['data']
+                self._server.broadcast(json.dumps({ 'type': 3, 'data': '', 'from': self.displayName, 'channel': self.channel }), self.channel, self)
+
+class Server(object):
+    def __init__(self, loop, port):
+        self.loop = loop
+        self._serv_sock = socket()
+        self._serv_sock.setblocking(0)
+        self._serv_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        self._serv_sock.bind(('',port))
+        self._serv_sock.listen(5)
+        print('Server listening on port ', port)
+        self._peers = []
+        Task(self._server())
+
+    def remove(self, peer):
+        self._peers.remove(peer)
+        self.broadcast('Peer %s quit!\n' % (peer.displayName), peer.channel, peer)
+
+    def broadcast(self, message, channel, sender):
+        for peer in self._peers:
+            if peer.channel == channel and peer != sender:
+                peer.send(message)
+
+    @coroutine
+    def _server(self):
+        while True:
+            peer_sock, peer_name = yield from self.loop.sock_accept(self._serv_sock)
+            peer_sock.setblocking(0)
+            peer = Peer(self, peer_sock, peer_name)
+            self._peers.append(peer)
+            print('New Peer connected', peer_name)
+            self.broadcast('Peer %s connected!\n' % (peer.displayName), peer.channel, peer)
+
+def main():
+    loop = get_event_loop()
+    Server(loop, 5000)
+    loop.run_forever()
+
+if __name__ == '__main__':
+    main()
