@@ -1,8 +1,8 @@
 # Game tool - Week 1 
 
 ## Team
-- Alan CHAUCHET
-- Florian GUERIN
+- Alan CHAUCHET 15129189
+- Florian GUERIN 15129095
 
 ## Problem / Goal
 
