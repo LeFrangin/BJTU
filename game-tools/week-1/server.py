@@ -58,7 +58,7 @@ class Server(object):
 
     def remove(self, peer):
         self._peers.remove(peer)
-        self.broadcast('Peer %s quit!\n' % (peer.displayName), peer.channel, peer)
+        self.broadcast(json.dumps({ 'type': 4, 'data': '', 'from': peer.displayName, 'channel': peer.channel }), peer.channel, peer)
 
     def broadcast(self, message, channel, sender):
         for peer in self._peers:
@@ -73,7 +73,7 @@ class Server(object):
             peer = Peer(self, peer_sock, peer_name)
             self._peers.append(peer)
             print('New Peer connected', peer_name)
-            self.broadcast('Peer %s connected!\n' % (peer.displayName), peer.channel, peer)
+            self.broadcast(json.dumps({ 'type': 3, 'data': '', 'from': peer.displayName, 'channel': peer.channel }), peer.channel, peer)
 
 def main():
     loop = get_event_loop()
