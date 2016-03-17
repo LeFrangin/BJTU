@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <objects>
+        <object id="1" strength="9" defense="0" reliability="0">
+            <name>Pierre</name>
+            <image>pierre.png</image>
+        </object>
+        <object id="2" strength="0" defense="10" reliability="0">
+            <name>Feuille</name>
+            <image>feuille.png</image>
+        </object>
+        <object id="3" strength="7" defense="0" reliability="10">
+            <name>Ciseaux</name>
+            <image>ciseaux.png</image>
+        </object>
+    </objects>
+</config>

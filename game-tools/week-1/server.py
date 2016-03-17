@@ -1,15 +1,18 @@
 from socket import socket, SO_REUSEADDR, SOL_SOCKET
 from asyncio import Task, coroutine, get_event_loop
+from enum import Enum
 import json
 
-BASIC_CHANNEL = 'All'
+class UserState(Enum):
+    pending = 1
+    playing = 2
+    choosing = 3
+    waiting = 4
 
 class Peer(object):
     def __init__(self, server, sock, name):
         self.loop = server.loop
-        self.name = name
-        self.displayName = 'anonymous'
-        self.channel = BASIC_CHANNEL
+        self._state = UserState.pending
         self._sock = sock
         self._server = server
         Task(self._peer_handler())

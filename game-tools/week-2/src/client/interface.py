@@ -17,13 +17,13 @@ class Client( object ):
 	__network = None
     
 	def __init__( self ):
-
+		print("popo")
 		## Initialize PyGame
 		pygame.init()
-
+		print("lpo")
 		## Initialize network
 		self.__network = helpers.Network()
-		self.__network.connect()
+		# self.__network.connect()
 
 
 		## Create the Screen
@@ -31,7 +31,9 @@ class Client( object ):
 
 	def run( self ):
 		## This is the main loop of the game
+		print("lol")
 		while 1:
+			print("coucou")
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
 					sys.exit()

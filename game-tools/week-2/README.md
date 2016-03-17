@@ -26,3 +26,51 @@ Now, you can launch many clients :
 
 That's it :)
 
+## Protocol
+
+### Client
+
+When asking to enter the room:
+> {
+> 	"state": 2
+> }
+
+When asking to leave the room:
+> {
+> 	"state": 1
+> }
+
+When client selected his object:
+> {
+> 	"state": 3,
+>	"id": `objectId`
+> }
+
+
+### Server
+
+When client accessed the room:
+> {
+> 	"state": 2
+> }
+
+When client exits the room:
+> {
+> 	"state": 1
+> }
+
+When client should select the object:
+> {
+> 	"state": 3
+> }
+
+When client has to wait for other players:
+> {
+> 	"state": 4
+> }
+
+When the game is finished:
+> {
+> 	"state": 1
+>	"result": `-1 for a loss, 0 for a tie and 1 for a win`
+> }
