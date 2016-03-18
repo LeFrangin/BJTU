@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<rules>
+	<rule id="1">You can choose only one object by turn</rule>
+	<rule id="2">Objects get 3 attributes</rule>
+</rules>

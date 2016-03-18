@@ -1,12 +1,25 @@
 from enum import Enum
 
-class Action( Enum ):
-    START = 1
-    RULE = 2
-    SCORE = 3
-    OBJECT = 4
-    QUIT = 5
+class Status( Enum ):
+    RESULT = 1
+    PLAYING = 2
+    CHOOSING = 3
+    WAITING = 4
+    QUIT = 6
+    MENU = 7
+    RULE = 8
+    SCORE = 9
+    OBJECTS = 10
+    CREDIT = 11
 
-class State( Enum ):
-    MENU = 1
-    QUIT = 2
+class Network( Enum ):
+    ONLINE = 1
+    OFFLINE = 2
+    SEND = 3
+    LISTEN = 4
+    CONNECT = 5
+
+class Result( Enum ):
+    WIN = 1
+    TIE = 0
+    LOOSE = -1
