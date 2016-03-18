@@ -65,6 +65,6 @@ class Sounds( object ):
 	def play( self, sound ):
 		if ( self.__sounds[ sound ][ "isPlayed" ] == False ):
 			pygame.mixer.music.load( os.path.join( self.__urlToSound, self.__sounds[ sound ][ "file" ] ) )
-			pygame.mixer.music.play()
+			pygame.mixer.music.play( 1 )
 			self.__sounds[ sound ][ "isPlayed" ] = True
 			

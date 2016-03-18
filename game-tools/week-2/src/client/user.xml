@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<user version="1.1" name="toto" ranking="5" total="35" time="120" won="10" tied="5" loose="20">
+	<stats>
+		<item value="5" color="white" bold="true">Ranking</item>
+		<item value="35" color="white" bold="">Total played</item>
+		<item value="10" color="yellow" bold="true">Total won</item>
+		<item value="5" color="blue" bold="true">Total tied</item>
+		<item value="20" color="red" bold="true">Total loose</item>
+		<item value="120" color="white" bold="">Time spend</item>
+		<item value="Rock" color="white" bold="">Favorite object</item>
+	</stats>
+	<history>
+	</history>
+</user>

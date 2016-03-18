@@ -15,7 +15,7 @@ class Client( object ):
 				"object": { "name":"Objects", "action": State.OBJECTS }, 
 				"credit": { "name":"Credit", "action": State.CREDIT }, 
 				"rule": { "name": "Rules", "action": State.RULE }, 
-				"score": { "name": "Scores", "action": State.SCORE }, 
+				"score": { "name": "Score", "action": State.SCORE }, 
 				"quit": { "name":"Quit", "action": State.QUIT }  
 			   }
 

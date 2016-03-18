@@ -28,6 +28,7 @@ class Client( object ):
 		pygame.mixer.init()
 		pygame.display.set_caption( "Toto" )
 		self.__clock = pygame.time.Clock()
+		pygame.mouse.set_cursor( *pygame.cursors.tri_left )
 
 		## Initialize network
 		self.__network = helpers.Network()
@@ -75,14 +76,15 @@ class Client( object ):
 				self.__game.objects( True )
 			elif self.__state == State.OBJECTS:
 				self.__game.objects( False )
+			elif self.__state == State.SCORE:
+				self.__game.score()
+			elif self.__state == State.RULE:
+				self.__game.rule()
 			elif self.__state == State.QUIT:
 				self.quit()
 				break
 
 			pygame.display.flip()
-
-	def game( self ):
-		pass
 
 	def quit( self ):
 		pygame.quit()

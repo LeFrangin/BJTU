@@ -3,6 +3,7 @@ import sys, os, time
 from pygame.locals import *
 import pygame
 from config import State, Result
+import xml.etree.cElementTree as ET
 
 class Game( object ):
 	## The game class - This class handles game engine.
@@ -11,7 +12,7 @@ class Game( object ):
 	__screen = None
 	__colors = helpers.Colors()
 	__sounds = helpers.Sounds()
-	__font = { "color": ( 255, 255, 255 ), "family": "ubuntumono", "size": 30, "bold": True }
+	__font = { "color": ( 255, 255, 255 ), "family": "ubuntumono", "size": 40, "bold": True }
 	__waitBar = { "x": 0, "ratioX": 5, "width": 0, "ratioW": 10 }
 	__objects = [ 
 		{ "name":"Rock", "icon": "rock.png", "id": 1, "strengh": 10, "defense": 4, "realiability": 7 }, 
@@ -21,15 +22,19 @@ class Game( object ):
 	__urlToIcons = os.path.dirname(__file__) + '/../../images/'
 	__selectedObject = 0
 	__informationObject = None
+	__user = ET.ElementTree( file = os.path.dirname(__file__) + "/user.xml" ).getroot()
+	__rules = ET.ElementTree( file = os.path.dirname(__file__) + "/rules.xml" ).getroot()
 
 	def __init__( self, screen ):
 		self.__screen = screen
 		self.__waitBar[ "width" ] = self.__screen.get_rect().width / 2
-		pygame.mouse.set_cursor( *pygame.cursors.tri_left )
 
-	def drawMessage( self, message, x, y, center, size, color ):
+		print( "tag=%s, attrib=%s" % ( self.__user.tag, self.__user.attrib ) )
+		print( self.__user.attrib[ "won" ] )
+
+	def drawMessage( self, message, x, y, center, size, color, bold=True ):
 		## Write a message
-		font = pygame.font.SysFont( self.__font[ "family" ], size, self.__font[ "bold" ] )
+		font = pygame.font.SysFont( self.__font[ "family" ], size, bold )
 		label = font.render( message, 1, self.__colors.get( color ) )
 		if ( center ):
 			x -= ( label.get_rect().width / 2 )
@@ -42,6 +47,7 @@ class Game( object ):
 		self.__screen.fill( self.__colors.get( color ), rect )
 		return rect
 
+	## All view from the game are implement here
 	def result( self, result ):
 
 		# Write a message
@@ -64,6 +70,54 @@ class Game( object ):
 			self.drawMessage( "You loose :(", x, y - ( self.__screen.get_rect().height / 9 ) , True, 50, "white" )
 			self.drawMessage( escape, x, y + ( self.__screen.get_rect().height / 9 ) , True, 20, "white" )
 			self.__sounds.play( "looser" )
+
+	def rule( self ):
+		width = self.__screen.get_rect().width
+		height = self.__screen.get_rect().height
+
+		## Draw rect and fill the background
+		self.drawRect( 0, 0, width, height, "grey" )
+
+		## Write the title
+		self.drawMessage( "Rules are very simple :)", ( width / 2 ), ( height / 9 ), True, self.__font[ "size" ], "white" )
+
+		## Write rules
+		count = 0
+		for child in self.__rules:
+			text = child.attrib[ "id" ] + ". " + child.text
+			self.drawMessage( text, 50, ( height / 3 ) + count, False, 20, "white", False )
+			count += 35
+
+	def score( self ):
+		width = self.__screen.get_rect().width
+		height = self.__screen.get_rect().height
+
+		## calculate percent
+		won = ( int( self.__user.attrib[ "won" ] ) / int( self.__user.attrib[ "total" ] ) ) * 100
+		tied = ( int( self.__user.attrib[ "tied" ] ) / int( self.__user.attrib[ "total" ] ) ) * 100
+		loose = ( int( self.__user.attrib[ "loose" ] ) / int( self.__user.attrib[ "total" ] ) ) * 100
+
+		## Draw rect and fill the background
+		self.drawRect( 0, 0, width, height, "grey" )
+
+		# Write the title
+		self.drawMessage( str( self.__user.attrib[ "name" ] ) + ", are you smart ?", ( width / 2 ), ( height / 9 ), True, self.__font[ "size" ], "white" )
+		self.drawMessage( "(apparently not...)", ( width / 2 ), ( height / 9 ) + 40, True, 25, "white", False )
+
+		for child in self.__user:
+			if child.tag == "stats":
+				count = 0
+				for stepChild in child:
+					self.drawMessage( stepChild.text + ": " + str( stepChild.attrib[ "value" ] ), ( width / 2 ), ( height / 3 ) + count, True, 30, stepChild.attrib[ "color" ], bool( stepChild.attrib[ "bold" ] ) )
+					count += 35
+
+		## Draw charts
+		self.drawRect( 0, height - 60, width * ( won / 100 ), 80, "yellow" )
+		self.drawMessage( "Won" + " (" + str( round( won, 1 ) ) + "%)", ( width * ( won / 100 ) ) / 2, height - 30, True, 18, "white", True )
+		self.drawRect( width * ( won / 100 ), height - 60, width * ( tied / 100 ), 80, "blue" )
+		self.drawMessage( "Tied" + " (" + str( round( tied, 1 ) ) + "%)", width * ( won / 100 ) + ( (  width * ( tied / 100 ) ) / 2 ), height - 30, True, 18, "white", True )
+		self.drawRect( width * ( won / 100 ) + width * ( tied / 100 ), height - 60, width * ( loose / 100 ), 80, "red" )
+		self.drawMessage( "Loose" + " (" + str( round( loose, 1 ) ) + "%)", width * ( won / 100 ) + width * ( tied / 100 ) + ( width * ( loose / 100 ) / 2 ) , height - 30, True, 18, "white", True )
 
 	def wait( self ):
 		## Draw rect and fill the background
