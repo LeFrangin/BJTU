@@ -16,9 +16,64 @@ class Server(object):
         self._serv_sock.listen(5)
         print('Server listening on port ', port)
         self._peers = []
+        self._inRoom = []
         self._gameObjects = []
         self.getObjects()
         Task(self._server())
+
+    def addToRoom(self, peer):
+        if not peer in self._inRoom:
+            self._inRoom.append(peer)
+            peer.send(json.dumps({ 'state': 3 }))
+
+    def removeFromRoom(self, peer, result=0):
+        print('removed from room with result %d' % (result))
+        self._inRoom.remove(peer)
+        peer.send(json.dumps({ 'state': 1, 'result': result }))
+
+    def checkGame(self):
+        loosers = []
+        for player1 in self._inRoom:
+            for player2 in self._inRoom:
+                if player1 != player2:
+                    result = player1.fight(player2)
+                    if result == 1 and not (player2 in loosers):
+                        self.removeFromRoom(player2, -1)
+                        loosers.append(player2)
+                        print('player2 loose with object ')
+                        player2.getObject().toString()
+                    elif result == -1 and not (player1 in loosers):
+                        self.removeFromRoom(player1, -1)
+                        loosers.append(player1)
+                        print('player1 loose with object ')
+                        player1.getObject().toString()
+        winners = []
+        for player in self._inRoom:
+            if not (player in loosers):
+                winners.append(player)
+        if len(winners) == 1:
+            self.removeFromRoom(winners[0], 1)
+            for player in self._peers:
+                player.emptyObject()
+        else:
+            for winner in winners:
+                winner.send(json.dumps({ 'state': 3 }))
+
+
+
+
+    def objectChosen(self, peer):
+        found = False
+        for peer in self._inRoom:
+            if not peer.hasObject():
+                found = True
+                print('one has no object')
+        if found or len(self._inRoom) == 1:
+            print('sending wait')
+            peer.send(json.dumps({ 'state': 4 }))
+        else:
+            print('checking game')
+            self.checkGame()
 
     def remove(self, peer):
         self._peers.remove(peer)
@@ -48,3 +103,9 @@ class Server(object):
             defense = currentObject.attrib['defense']
             reliability = currentObject.attrib['reliability']
             self._gameObjects.append(GameObject(int(id), name, image, int(strength), int(defense), int(reliability)))
+
+    def getObject(self, id):
+        for gameObject in self._gameObjects:
+            if gameObject.getId() == id:
+                return gameObject
+        return None

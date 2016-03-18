@@ -9,6 +9,7 @@ class Peer(object):
         self._sock = sock
         self._server = server
         self._actions = [self.actionPending, self.actionPlaying, self.actionChoosing]
+        self._object = None
         Task(self._peer_handler())
 
     def send(self, data):
@@ -24,13 +25,40 @@ class Peer(object):
             self._server.remove(self)
 
     def actionPending(self, data):
-        print('1')
+        self._object = None
+        self._state = UserState.pending
+        self._server.removeFromRoom(self)
 
     def actionPlaying(self, data):
-        print('1')
+        self._object = None
+        self._state = UserState.playing
+        self._server.addToRoom(self)
 
     def actionChoosing(self, data):
-        print('1')
+        print('in action choosing')
+        self._object = self._server.getObject(data["id"])
+        if self._object == None:
+            print('object not found')
+            self.actionPending()
+        print('object found')
+        self._object.toString()
+        self._state = UserState.waiting
+        self._server.objectChosen(self)
+
+    def getState(self):
+        return self._state
+
+    def hasObject(self):
+        return self._object != None
+
+    def getObject(self):
+        return self._object
+
+    def emptyObject(self):
+        self._object = None
+
+    def fight(self, other):
+        return self.getObject().fight(other.getObject())
 
     @coroutine
     def _peer_loop(self):
@@ -42,5 +70,3 @@ class Peer(object):
             print('data received')
             print(data)
             self._actions[int(data["state"]) - 1](data)
-#            if data['type'] == 1:
-#                self._server.broadcast(json.dumps({ 'type': 1, 'data': data['data'], 'from': self.displayName, 'channel': self.channel }), self.channel, self)
