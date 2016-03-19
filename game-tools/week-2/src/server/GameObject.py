@@ -33,7 +33,7 @@ class GameObject(object):
     def getImage(self):
         return self._image
 
-    def getStrenth(self):
+    def getStrength(self):
         return self._strength
 
     def getDefense(self):

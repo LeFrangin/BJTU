@@ -1,15 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <config>
     <objects>
-        <object id="1" strength="9" defense="0" reliability="0">
+        <object defense="0" id="1" reliability="0" strength="9">
             <name>Pierre</name>
             <image>pierre.png</image>
         </object>
-        <object id="2" strength="0" defense="10" reliability="0">
+        <object defense="10" id="2" reliability="0" strength="0">
             <name>Feuille</name>
             <image>feuille.png</image>
         </object>
-        <object id="3" strength="7" defense="0" reliability="10">
+        <object defense="5" id="3" reliability="10" strength="7">
             <name>Ciseaux</name>
             <image>ciseaux.png</image>
         </object>

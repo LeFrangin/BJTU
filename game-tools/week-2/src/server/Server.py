@@ -35,8 +35,7 @@ class Server(object):
             self._inRoom.append(peer)
             peer.send(json.dumps({ 'state': 3 }))
 
-    def removeFromRoom(self, peer, result=0):
-        print('removed from room with result %d' % (result))
+    def removeFromRoom(self, peer, result=None):
         self._inRoom.remove(peer)
         peer.send(json.dumps({ 'state': 1, 'result': result }))
 
@@ -113,15 +112,14 @@ class Server(object):
             reliability = currentObject.attrib['reliability']
             self._gameObjects.append(GameObject(int(id), name, image, int(strength), int(defense), int(reliability)))
 
-
     def sendObjects(self, peer):
-        peer.send(json.dumps({ "state": 5, "objects": self._gameObjects }, cls=ComplexEncoder))
+        peer.send(json.dumps({ 'state': 5, 'objects': self._gameObjects }, cls=ComplexEncoder))
 
     def modifyObject(self, peer, objectId, newObject):
         root = self._tree.getroot()
         objects = root.find('objects').findall('object')
         for currentObject in objects:
-            if currentObject.attrib['id'] == objectId:
+            if int(currentObject.attrib['id']) == objectId:
                 currentObject.find('name').text = newObject.getName()
                 currentObject.find('image').text = newObject.getImage()
                 currentObject.set('strength', str(newObject.getStrength()))
@@ -132,6 +130,44 @@ class Server(object):
         for currentObject in self._gameObjects:
             if currentObject.getId() == objectId:
                 self._gameObjects[self._gameObjects.index(currentObject)] = newObject
+        self.sendObjects(peer)
+
+    def addObject(self, peer, newObject):
+        search = True
+        objectId = 1
+        while search:
+            lastId = objectId
+            for currentObject in self._gameObjects:
+                if currentObject.getId() == objectId:
+                    objectId += 1
+            if lastId == objectId:
+                search = False
+        newObject = GameObject(objectId, newObject['name'], newObject['image'], newObject['strength'], newObject['defense'], newObject['reliability'])
+        self._gameObjects.append(newObject)
+        objects = self._tree.getroot().find('objects')
+        newElement = etree.Element('object', { 'id': str(objectId), 'strength': str(newObject.getStrength()), 'defense': str(newObject.getDefense()), 'reliability': str(newObject.getReliability()) })
+        newElementName = etree.Element('name')
+        newElementName.text = newObject.getName()
+        newElementImage = etree.Element('image')
+        newElementImage.text = newObject.getImage()
+        newElement.append(newElementName)
+        newElement.append(newElementImage)
+        objects.append(newElement)
+        self._tree.write(self._initFile)
+        self.sendObjects(peer)
+
+    def removeObject(self, peer, objectId):
+        for currentObject in self._gameObjects:
+            if currentObject.getId() == objectId:
+                self._gameObjects.remove(currentObject)
+                break
+        objects = self._tree.getroot().find('objects')
+        objectList = objects.findall('object')
+        for currentObject in objectList:
+            if int(currentObject.attrib['id']) == objectId:
+                objects.remove(currentObject)
+                break
+        self._tree.write(self._initFile)
         self.sendObjects(peer)
 
     def getObject(self, id):
