@@ -1,6 +1,7 @@
 from asyncio import Task, coroutine
 import json
 from UserState import UserState
+from GameObject import GameObject
 
 class Peer(object):
     def __init__(self, server, sock, name):
@@ -8,7 +9,7 @@ class Peer(object):
         self._state = UserState.pending
         self._sock = sock
         self._server = server
-        self._actions = [self.actionPending, self.actionPlaying, self.actionChoosing]
+        self._actions = [self.actionPending, self.actionPlaying, self.actionChoosing, None, self.actionEditObject, self.actionAddObject, self.actionRemoveObject]
         self._object = None
         Task(self._peer_handler())
 
@@ -36,7 +37,7 @@ class Peer(object):
 
     def actionChoosing(self, data):
         print('in action choosing')
-        self._object = self._server.getObject(data["id"])
+        self._object = self._server.getObject(data['id'])
         if self._object == None:
             print('object not found')
             self.actionPending()
@@ -44,6 +45,17 @@ class Peer(object):
         self._object.toString()
         self._state = UserState.waiting
         self._server.objectChosen(self)
+
+    def actionEditObject(self, data):
+        newObjectJSON = data['object']
+        newObject = GameObject(int(newObjectJSON['id']), newObjectJSON['name'], newObjectJSON['image'], int(newObjectJSON['strength']), int(newObjectJSON['defense']), int(newObjectJSON['reliability']))
+        self._server.modifyObject(self, int(data['object']['id']), newObject)
+
+    def actionAddObject(self, data):
+        self._server.addObject(self, data['object'])
+
+    def actionRemoveObject(self, data):
+        self._server.removeObject(self, data['id'])
 
     def getState(self):
         return self._state
@@ -69,4 +81,4 @@ class Peer(object):
             data = json.loads(buf.decode())
             print('data received')
             print(data)
-            self._actions[int(data["state"]) - 1](data)
+            self._actions[int(data['state']) - 1](data)
