@@ -8,16 +8,17 @@ from threading import Thread
 if not pygame.font: print( 'Warning, fonts disabled' )
 if not pygame.mixer: print( 'Warning, sound disabled' )
 
-class Client( Thread ):
+class Client( object ):
 	## The Client Class - This class handles the menu of the client.
 
 	## variables
-	__items = { "start": { "name":"Start a new game", "action": { "state": 2 }, "request": True }, 
+	__items = { "start": { "name":"Start a new game", "action": { "state": net.ENTERROOM.value }, "request": True }, 
 				"offline": { "name":"Server offline :(", "action": Status.MENU, "request": False }, 
 				"object": { "name":"Objects", "action": Status.OBJECTS, "request": False }, 
 				"credit": { "name":"Credit", "action": Status.CREDIT, "request": False }, 
 				"rule": { "name": "Rules", "action": Status.RULE, "request": False }, 
-				"score": { "name": "Score", "action": Status.SCORE, "request": False }, 
+				# "score": { "name": "Score", "action": Status.SCORE, "request": False }, 
+				"editor": { "name": "Editor", "action": Status.EDITOR, "request": False }, 
 				"quit": { "name":"Quit", "action": Status.QUIT, "request": False }  
 			   }
 	__colors = Colors()
@@ -27,7 +28,7 @@ class Client( Thread ):
 	
     
 	def __init__( self, bag ):
-		Thread.__init__( self )
+		# Thread.__init__( self )
 		self.__bag = bag
 
 	def run( self ):
@@ -50,7 +51,10 @@ class Client( Thread ):
 		else:
 			self.grid( "offline", self.__bag.screen.get_rect().width, 3, 1.5, 3, self.__colors.get( "red" ) ) # Main block
 		self.grid( "object", self.__bag.screen.get_rect().width, self.__bag.screen.get_rect().height, 2, 3, self.__colors.get( "grey" ) ) # top left block
-		self.grid( "score", 2, self.__bag.screen.get_rect().height, 2, 3, self.__colors.get( "grey1" ) ) # top right block
+		if ( self.__bag.statusNetwork == net.ONLINE ):
+			self.grid( "editor", 2, self.__bag.screen.get_rect().height, 2, 3, self.__colors.get( "grey1" ) ) # top right block
+		else:
+			self.grid( "offline", 2, self.__bag.screen.get_rect().height, 2, 3, self.__colors.get( "red" ) ) # top right block
 		self.grid( "credit", 1.5, 3, 3, 3, self.__colors.get( "grey" ) ) # Main block
 		self.grid( "rule", self.__bag.screen.get_rect().width, 1.5, 2, 3, self.__colors.get( "grey" ) ) # bottom left block
 		self.grid( "quit", 2, 1.5, 2, 3, self.__colors.get( "grey1" ) ) # bottom right block

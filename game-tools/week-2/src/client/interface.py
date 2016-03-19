@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, json
 import pygame
 import helpers
 import menu
@@ -18,6 +18,12 @@ class Bag( object ):
 	messageNetwork = ""
 	responseNetwork = ""
 	statusNetwork = net.OFFLINE
+	canSendNetwork = True
+	cursorPosition = 0
+	cursorLimit = 0
+	attribute = None
+	object = None
+	objects = None
 	status = Status.MENU
 	result = None
 	key = None
@@ -55,19 +61,23 @@ class Client( object ):
 		self.__threads[ "network" ] = helpers.Network( self.__bag )
 		self.__threads[ "network" ].start()
 		# Menu
-		self.__threads[ "menu" ] = menu.Client( self.__bag )
-		self.__threads[ "menu" ].start()
+		# self.__threads[ "menu" ] = menu.Client( self.__bag )
+		# self.__threads[ "menu" ].start()
+		self.__menu = menu.Client( self.__bag )
 
 		## Create engine
 		self.__game = engine.Game( self.__bag )
 
 		## Dictionnary of functions
 		self.__functions = {
+			Status.MENU : self.__menu.display,
 			Status.WAITING: self.__game.wait,
 			Status.CHOOSING: self.__game.choosing,
 			Status.OBJECTS: self.__game.objects,
 			Status.RESULT: self.__game.result,
 			Status.SCORE: self.__game.score,
+			Status.EDITOR: self.__game.editor,
+			Status.EDITORVIEW: self.__game.editorView,
 			Status.RULE: self.__game.rule,
 		}
 
@@ -87,16 +97,23 @@ class Client( object ):
 				## catch keyboard
 				if event.type == pygame.KEYDOWN:
 					self.__bag.key = event.key
-					print( event.key )
 
 			if self.__bag.key == pygame.K_ESCAPE:
 				self.__bag.key = None
-				self.__bag.status = Status.MENU
-				if ( self.__bag.statusNetwork == net.ONLINE ):
-					self.__bag.actionNetwork = net.LISTEN
+				self.__game.reinit()
+				if self.__bag.status == Status.EDITORVIEW:
+					self.__bag.status = Status.EDITOR
+				elif self.__bag.status == Status.WAITING or self.__bag.status == Status.CHOOSING:
+					self.__bag.status = Status.MENU
+					self.__bag.actionNetwork = net.SEND
+					self.__bag.messageNetwork = { "state": net.LEAVEROOM.value }
 				else:
-					self.__bag.actionNetwork = net.CONNECT
-				self.__bag.messageNetwork = ""
+					self.__bag.status = Status.MENU
+					if ( self.__bag.statusNetwork == net.ONLINE ):
+						self.__bag.actionNetwork = net.LISTEN
+					else:
+						self.__bag.actionNetwork = net.CONNECT
+					self.__bag.messageNetwork = ""
 
 			## Choose which function of the game engine to call
 			if self.__bag.status in self.__functions:

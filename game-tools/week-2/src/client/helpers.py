@@ -36,8 +36,9 @@ class Network( Thread ):
 			self.__bag.actionNetwork = net.LISTEN
 			fcntl.fcntl( self.__socket, fcntl.F_SETFL, os.O_NONBLOCK )
 		except :
-			print( colored( 'Unable to connect to the remote server... try again :)', "red" ) )
+			# print( colored( 'Unable to connect to the remote server... try again :)', "red" ) )
 			self.__bag.statusNetwork = net.OFFLINE
+			self.__bag.actionNetwork = net.CONNECT
 
 	def listen( self ):
 		socketList = [ self.__socket ]
@@ -49,7 +50,6 @@ class Network( Thread ):
 			msg = self.__socket.recv( 4096 )
 		except:
 			pass
-			# print( "Nothing to do" )
 		else:
 			if not msg :
 				print( '\nDisconnected from server' )
@@ -57,16 +57,28 @@ class Network( Thread ):
 				self.__bag.actionNetwork = net.CONNECT
 				self.__status = Status.MENU
 			else:
-				data = json.loads( msg.decode() )
-				if "result" in data:
-					self.__bag.result = data[ "result" ]
-				self.__bag.status = Status( data[ "state" ] )
-				print( data )
+				self.__bag.responseNetwork = json.loads( msg.decode() )
+				print( "From server => " + str( self.__bag.responseNetwork ) )
+
+				if "result" in self.__bag.responseNetwork:
+					self.__bag.result = self.__bag.responseNetwork[ "result" ]
+					if self.__bag.responseNetwork[ "result" ] == None:
+						self.__bag.status = Status.MENU
+					else:
+						self.__bag.status = Status( self.__bag.responseNetwork[ "state" ] )
+				if Status( self.__bag.responseNetwork[ "state" ] ) == Status.UPDATE:
+					self.update()
+				else:
+					self.__bag.status = Status( self.__bag.responseNetwork[ "state" ] )
+
+	def update( self ):
+		self.__bag.objects = self.__bag.responseNetwork[ "objects" ]
+		self.__bag.status = Status.MENU
 
 	## Send a message to the server
 	def sendMessage( self ):
 		self.__socket.send( json.dumps( self.__bag.messageNetwork ).encode() )
-		print("Hello j'envoie")
+		print( "To server => " + str( self.__bag.messageNetwork ) )
 		self.__bag.actionNetwork = net.LISTEN
 		self.__bag.messageNetwork = ""
 
