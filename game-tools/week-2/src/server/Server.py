@@ -2,6 +2,7 @@ from socket import socket, SO_REUSEADDR, SOL_SOCKET
 from asyncio import Task, coroutine
 import xml.etree.ElementTree as etree
 import json
+import os
 from GameObject import GameObject
 from Peer import Peer
 from UserState import UserState
@@ -95,7 +96,7 @@ class Server(object):
             print('New Peer connected', peer_name)
 
     def getObjects(self):
-        root = etree.parse('init.xml').getroot()
+        root = etree.parse(os.path.join(os.path.dirname(__file__), 'init.xml')).getroot()
         objects = root.find('objects').findall('object')
         for currentObject in objects:
             id = currentObject.attrib['id']
