@@ -77,6 +77,8 @@ class Server(object):
 
     def remove(self, peer):
         self._peers.remove(peer)
+        if peer in self._inRoom:
+            self._inRoom.remove(peer)
 
     def broadcast(self, message, channel, sender):
         for peer in self._peers:
