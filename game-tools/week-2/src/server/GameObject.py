@@ -27,8 +27,23 @@ class GameObject(object):
     def getId(self):
         return self._id
 
+    def getName(self):
+        return self._name
+
+    def getImage(self):
+        return self._image
+
+    def getStrenth(self):
+        return self._strength
+
+    def getDefense(self):
+        return self._defense
+
+    def getReliability(self):
+        return self._reliability
+
     def toJSON(self):
-        return json.dumps({ 'id': self._id, 'name': self._name, 'image': self._image, 'strength': self._strength, 'defense': self._defense, 'reliability': self._reliability })
+        return { 'id': self._id, 'name': self._name, 'image': self._image, 'strength': self._strength, 'defense': self._defense, 'reliability': self._reliability }
 
     def toString(self):
         print("object %s with id %d image %s strength %d defense %d reliability %d" % (self._name, self._id, self._image, self._strength, self._defense, self._reliability))

@@ -1,6 +1,7 @@
 from asyncio import Task, coroutine
 import json
 from UserState import UserState
+from GameObject import GameObject
 
 class Peer(object):
     def __init__(self, server, sock, name):
@@ -8,7 +9,7 @@ class Peer(object):
         self._state = UserState.pending
         self._sock = sock
         self._server = server
-        self._actions = [self.actionPending, self.actionPlaying, self.actionChoosing]
+        self._actions = [self.actionPending, self.actionPlaying, self.actionChoosing, self.actionEditObject]
         self._object = None
         Task(self._peer_handler())
 
@@ -44,6 +45,9 @@ class Peer(object):
         self._object.toString()
         self._state = UserState.waiting
         self._server.objectChosen(self)
+
+    def actionEditObject(self, data):
+        self._server.modifyObject(self, data["id"], GameObject(data["id"], data["name"], data["image"], data["strength"], data["defense"], data["reliaility"]))
 
     def getState(self):
         return self._state

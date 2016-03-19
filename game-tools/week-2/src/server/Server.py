@@ -7,6 +7,12 @@ from GameObject import GameObject
 from Peer import Peer
 from UserState import UserState
 
+class ComplexEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, GameObject):
+            return obj.toJSON()
+        return json.JSONEncoder.default(self, obj)
+
 class Server(object):
     def __init__(self, loop, port):
         self.loop = loop
@@ -15,6 +21,8 @@ class Server(object):
         self._serv_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         self._serv_sock.bind(('',port))
         self._serv_sock.listen(5)
+        self._initFile = os.path.join(os.path.dirname(__file__), 'init.xml')
+        self._tree = etree.parse(self._initFile)
         print('Server listening on port ', port)
         self._peers = []
         self._inRoom = []
@@ -60,9 +68,6 @@ class Server(object):
             for winner in winners:
                 winner.send(json.dumps({ 'state': 3 }))
 
-
-
-
     def objectChosen(self, peer):
         found = False
         for peer in self._inRoom:
@@ -94,9 +99,10 @@ class Server(object):
             peer = Peer(self, peer_sock, peer_name)
             self._peers.append(peer)
             print('New Peer connected', peer_name)
+            self.sendObjects(peer)
 
     def getObjects(self):
-        root = etree.parse(os.path.join(os.path.dirname(__file__), 'init.xml')).getroot()
+        root = self._tree.getroot()
         objects = root.find('objects').findall('object')
         for currentObject in objects:
             id = currentObject.attrib['id']
@@ -106,6 +112,27 @@ class Server(object):
             defense = currentObject.attrib['defense']
             reliability = currentObject.attrib['reliability']
             self._gameObjects.append(GameObject(int(id), name, image, int(strength), int(defense), int(reliability)))
+
+
+    def sendObjects(self, peer):
+        peer.send(json.dumps({ "state": 5, "objects": self._gameObjects }, cls=ComplexEncoder))
+
+    def modifyObject(self, peer, objectId, newObject):
+        root = self._tree.getroot()
+        objects = root.find('objects').findall('object')
+        for currentObject in objects:
+            if currentObject.attrib['id'] == objectId:
+                currentObject.find('name').text = newObject.getName()
+                currentObject.find('image').text = newObject.getImage()
+                currentObject.set('strength', str(newObject.getStrength()))
+                currentObject.set('defense', str(newObject.getDefense()))
+                currentObject.set('reliability', str(newObject.getReliability()))
+                break
+        self._tree.write(self._initFile)
+        for currentObject in self._gameObjects:
+            if currentObject.getId() == objectId:
+                self._gameObjects[self._gameObjects.index(currentObject)] = newObject
+        self.sendObjects(peer)
 
     def getObject(self, id):
         for gameObject in self._gameObjects:
